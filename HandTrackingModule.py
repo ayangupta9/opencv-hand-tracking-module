@@ -14,6 +14,8 @@ class handDetector():
         self.hands = self.mpHands.Hands(
             self.mode, self.maxHands, self.detectionCon, self.trackCon)
         self.mpDraw = pipe.solutions.drawing_utils
+        self.lmList = []
+        self.tipIds = [4, 8, 12, 16, 20]
 
     def findHands(self, img, draw=True):
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -32,21 +34,48 @@ class handDetector():
 
     def finPosition(self, img, handNo=0, draw=True):
 
-        lmList = []
+        xList = []
+        yList = []
+        bbox = []
+
         if self.results.multi_hand_landmarks:
             myHand = self.results.multi_hand_landmarks[handNo]
 
             for id, lm in enumerate(myHand.landmark):
-                # print(id, lm)
                 h, w, c = img.shape
                 cx, cy = int(w*lm.x), int(h * lm.y)
-                lmList.append([id, cx, cy])
-                # if id == 0:
-                if draw:
-                    cv2.circle(img, (cx, cy), 10,
-                               (255, 255, 0), cv2.FILLED)
+                xList.append(cx)
+                yList.append(cy)
+                self.lmList.append([id, cx, cy])
+                # if draw:
+                #     cv2.circle(img, (cx, cy), 10,
+                #                (255, 255, 0), cv2.FILLED)
 
-        return lmList
+            xmin, xmax = min(xList), max(xList)
+            ymin, ymax = min(yList), max(yList)
+
+            bbox = [xmin, ymin, xmax, ymax]
+
+            if draw:
+                cv2.rectangle(img, (bbox[0]-20, bbox[1]-20),
+                              (bbox[2]+20, bbox[3]+20), (0, 255, 0), 2)
+
+        return self.lmList, bbox
+
+    def fingersUp(self):
+        fingers = []
+
+        if self.lmList[self.tipIds[0]][1] < self.lmList[self.tipIds[0] - 1][1]:
+            fingers.append(1)
+        else:
+            fingers.append(0)
+
+        for id in range(1, 5):
+            if self.lmList[self.tipIds[id]][2] < self.lmList[self.tipIds[id] - 2][2]:
+                fingers.append(1)
+            else:
+                fingers.append(0)
+        return fingers
 
 
 def main():
