@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as pipe
 import time
+import math
 
 
 class handDetector():
@@ -14,7 +15,7 @@ class handDetector():
         self.hands = self.mpHands.Hands(
             self.mode, self.maxHands, self.detectionCon, self.trackCon)
         self.mpDraw = pipe.solutions.drawing_utils
-        self.lmList = []
+        # self.lmList = []
         self.tipIds = [4, 8, 12, 16, 20]
 
     def findHands(self, img, draw=True):
@@ -37,10 +38,10 @@ class handDetector():
         xList = []
         yList = []
         bbox = []
+        self.lmList = []
 
         if self.results.multi_hand_landmarks:
             myHand = self.results.multi_hand_landmarks[handNo]
-
             for id, lm in enumerate(myHand.landmark):
                 h, w, c = img.shape
                 cx, cy = int(w*lm.x), int(h * lm.y)
@@ -76,6 +77,20 @@ class handDetector():
             else:
                 fingers.append(0)
         return fingers
+
+    def findDistance(self, p1, p2, img, draw=True):
+        x1, y1 = self.lmList[p1][1], self.lmList[p1][2]
+        x2, y2 = self.lmList[p2][1], self.lmList[p2][2]
+        cx, cy = (x1+x2)//2, (y1+y2)//2
+
+        length = math.dist([x1, y1], [x2, y2])
+        if draw:
+            cv2.circle(img, (x1, y1), 10, (255, 255, 255), cv2.FILLED)
+            cv2.circle(img, (x2, y2), 10, (255, 255, 255), cv2.FILLED)
+            cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 4)
+            cv2.circle(img, (cx, cy), 10, (255, 255, 255), cv2.FILLED)
+
+        return length, img, [x1, y1, x2, y2, cx, cy]
 
 
 def main():

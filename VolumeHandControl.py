@@ -14,7 +14,7 @@ capture = cv2.VideoCapture(0)
 cTime = 0
 pTime = 0
 
-detector = htm.handDetector()
+detector = htm.handDetector(maxHands=1)
 
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(
@@ -37,27 +37,26 @@ while True:
     lmList, box = detector.finPosition(img, draw=True)
 
     if len(lmList) != 0:
-            area = (box[2] - box[0]) * (box[3] - box[1]) // 100
-            if 500 < area < 1000:
+        # area = (box[2] - box[0]) * (box[3] - box[1]) // 100
+        # if 500 < area < 1000:
 
-            x1, y1 = lmList[4][1], lmList[4][2]
-            x2, y2 = lmList[8][1], lmList[8][2]
-            cx, cy = (x1+x2)//2, (y1+y2)//2
+        length, img, lineInfo = detector.findDistance(4, 8, img)
 
-            length = math.dist([x1, y1], [x2, y2])
+        # Volume convertor
+        # vol = np.interp(length, [30, 150], [0, 1])
+        volBar = np.interp(length, [30, 150], [400, 150])
+        volPer = np.interp(length, [30, 150], [0, 100])
 
-            cv2.circle(img, (x1, y1), 10, (255, 255, 255), cv2.FILLED)
-            cv2.circle(img, (x2, y2), 10, (255, 255, 255), cv2.FILLED)
-            cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 4)
-            cv2.circle(img, (cx, cy), 10, (255, 255, 255), cv2.FILLED)
+        smoothness = 5
+        volPer = smoothness * round(volPer/smoothness)
 
-            vol = np.interp(length, [30, 150], [0, 1])
-            volBar = np.interp(length, [30, 150], [400, 150])
-            volPer = np.interp(length, [30, 150], [0, 100])
-            volume.SetMasterVolumeLevelScalar(vol, None)
+        fingers = detector.fingersUp()
+        if not fingers[4]:
+            volume.SetMasterVolumeLevelScalar(volPer/100, None)
+            cv2.circle(img, (lineInfo[4], lineInfo[5]),
+                       10, (0, 255, 0), cv2.FILLED)
 
-            if length < 30:
-                cv2.circle(img, (cx, cy), 10, (0, 255, 0), cv2.FILLED)
+        # if length < 30:
 
     cv2.rectangle(img, (50, 150), (85, 400), (0, 255, 0), 3)
     cv2.rectangle(img, (50, int(volBar)), (85, 400), (0, 255, 0), cv2.FILLED)
