@@ -16,6 +16,8 @@ class handDetector():
             self.mode, self.maxHands, self.detectionCon, self.trackCon)
         self.mpDraw = pipe.solutions.drawing_utils
         # self.lmList = []
+        self.c = 0
+        self.p = 0
         self.tipIds = [4, 8, 12, 16, 20]
 
     def findHands(self, img, draw=True):
@@ -91,6 +93,16 @@ class handDetector():
             cv2.circle(img, (cx, cy), 10, (255, 255, 255), cv2.FILLED)
 
         return length, img, [x1, y1, x2, y2, cx, cy]
+
+    def drawFPS(self, img):
+        self.c = time.time()
+        fps = 1 / (self.c - self.p)
+        self.p = self.c
+
+        cv2.putText(img, str((int(fps))), (10, 50),
+                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 3, (255, 0, 255), 3)
+
+        # return cTime, pTime
 
 
 def main():
